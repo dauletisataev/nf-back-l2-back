@@ -1,23 +1,28 @@
-import 'dotenv/config';
-import express from 'express';
-import connectDB from './db';
-import globalRouter from './global-router';
-import { logger } from './logger';
+import "dotenv/config";
+import express from "express";
+import { Server } from "socket.io";
+import { createServer } from "node:http";
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const server = createServer(app);
+const io = new Server(server);
 
-connectDB();
+app.get("/send-notification-to-users", (req, res) => {
+  // get from params room name
+  const room = req.query.room as string;
+  io.to("room-1").to("room-2").emit("hello", "world");
+  res.send("Hello World");
+});
 
-app.use(logger);
-app.use(express.json());
-app.use('/api/v1/',globalRouter);
+io.on("connection", (socket) => {
+  console.log("a user connected");
 
+  socket.on("join-room", (room) => {
+    console.log("joined room", room);
+    socket.join(room);
+  });
+});
 
-app.get('/helloworld',(request,response) =>{
-  response.send("Hello World!");
-})
-
-app.listen(PORT, () => {
-  console.log(`Server runs at http://localhost:${PORT}`);
+server.listen(3000, () => {
+  console.log("server running at http://localhost:3000");
 });
